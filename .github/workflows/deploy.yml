@@ -1,0 +1,97 @@
+# ═══════════════════════════════════════════════════════════════════════════
+#  Renox Planner — CI/CD
+#  هر push روی main (یا اجرای دستی) →
+#   ۱) لینت + بررسی تایپ + تست
+#   ۲) بیلد استاتیک با basePath مخزن
+#   ۳) انتشار روی GitHub Pages
+#  نکته: در Settings → Pages گزینه Source را روی «GitHub Actions» بگذارید.
+# ═══════════════════════════════════════════════════════════════════════════
+name: 🚀 Build & Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# دسترسی‌های لازم برای انتشار در Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# فقط یک انتشار همزمان؛ اجراهای قدیمی‌تر لغو می‌شوند
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  # ───────────────────────────── کیفیت کد ─────────────────────────────
+  quality:
+    name: 🧪 لینت و تست
+    runs-on: ubuntu-latest
+    steps:
+      - name: دریافت کد
+        uses: actions/checkout@v4
+
+      - name: نصب Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: نصب بسته‌ها
+        run: npm ci || npm install
+
+      - name: بررسی تایپ‌ها
+        run: npm run typecheck
+
+      - name: بررسی ESLint
+        run: npm run lint
+
+      - name: اجرای تست‌ها
+        run: npm test
+
+  # ───────────────────────────── ساخت و انتشار ─────────────────────────
+  build:
+    name: 🏗 ساخت نسخه استاتیک
+    needs: quality
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_PAGES: 'true'
+      NEXT_PUBLIC_BASE_PATH: /${{ github.event.repository.name }}
+      REPO_NAME: ${{ github.event.repository.name }}
+    steps:
+      - name: دریافت کد
+        uses: actions/checkout@v4
+
+      - name: نصب Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: نصب بسته‌ها
+        run: npm ci || npm install
+
+      - name: ساخت خروجی استاتیک
+        run: npm run build
+
+      - name: افزودن فایل .nojekyll
+        run: touch out/.nojekyll
+
+      - name: بارگذاری artifact برای Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: out
+
+  deploy:
+    name: 🌐 انتشار روی Pages
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: انتشار
+        id: deployment
+        uses: actions/deploy-pages@v4

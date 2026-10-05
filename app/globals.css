@@ -1,0 +1,321 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ==========================================================================
+   Renox Planner — سیستم طراحی
+   پالت گرم (کرم/بژ/قهوه‌ای روشن) + لهجه ملایم سبز-آبی + حالت تاریک عمیق
+   ========================================================================== */
+
+@layer base {
+  :root {
+    /* سطح‌ها */
+    --bg: 250 247 242; /* #FAF7F2 کرم */
+    --bg-elevated: 255 255 255;
+    --bg-sunken: 244 238 228;
+    --surface: 255 255 255;
+    --surface-2: 251 248 243;
+    --border: 235 226 212;
+    --border-soft: 244 238 228;
+
+    /* متن */
+    --text: 51 42 29;
+    --text-muted: 111 91 62;
+    --text-subtle: 142 117 80;
+
+    /* لهجه */
+    --accent: 87 136 106; /* #57886A */
+    --accent-soft: 228 237 231;
+    --accent-contrast: 255 255 255;
+
+    /* وضعیت‌ها */
+    --success: 87 136 106;
+    --warning: 173 146 104;
+    --danger: 192 85 74;
+    --info: 108 127 168;
+
+    /* شیشه */
+    --glass-bg: 255 255 255;
+    --glass-alpha: 0.72;
+    --glass-border: 255 255 255;
+    --glass-border-alpha: 0.55;
+
+    --shadow-color: 51 42 29;
+    --radius-card: 20px;
+  }
+
+  .dark {
+    --bg: 10 10 11; /* #0A0A0B */
+    --bg-elevated: 20 20 23;
+    --bg-sunken: 7 7 8;
+    --surface: 24 24 28;
+    --surface-2: 30 30 35;
+    --border: 45 45 52;
+    --border-soft: 35 35 41;
+
+    --text: 240 238 234;
+    --text-muted: 176 172 165;
+    --text-subtle: 138 134 128;
+
+    --accent: 120 164 137;
+    --accent-soft: 37 57 45;
+    --accent-contrast: 10 10 11;
+
+    --success: 120 164 137;
+    --warning: 196 172 133;
+    --danger: 214 121 110;
+    --info: 146 166 204;
+
+    --glass-bg: 26 26 30;
+    --glass-alpha: 0.62;
+    --glass-border: 255 255 255;
+    --glass-border-alpha: 0.08;
+
+    --shadow-color: 0 0 0;
+    --radius-card: 20px;
+  }
+
+  * {
+    border-color: rgb(var(--border));
+  }
+
+  html {
+    -webkit-tap-highlight-color: transparent;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: rgb(var(--bg));
+    color: rgb(var(--text));
+    font-feature-settings: 'ss01', 'ss02';
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    overscroll-behavior-y: none;
+  }
+
+  /* انتقال نرم هنگام تغییر تم */
+  body,
+  .theme-transition * {
+    transition: background-color 260ms cubic-bezier(0.22, 1, 0.36, 1),
+      border-color 260ms cubic-bezier(0.22, 1, 0.36, 1), color 200ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  /* اعداد فارسی برای عناصر داده‌ای */
+  .num {
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0;
+  }
+
+  ::selection {
+    background: rgb(var(--accent) / 0.25);
+  }
+
+  :focus-visible {
+    outline: 2px solid rgb(var(--accent));
+    outline-offset: 2px;
+    border-radius: 8px;
+  }
+
+  /* اسکرول‌بار مینیمال */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgb(var(--text-subtle) / 0.25);
+    border-radius: 999px;
+    border: 3px solid transparent;
+    background-clip: content-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgb(var(--text-subtle) / 0.45);
+    background-clip: content-box;
+  }
+
+  input,
+  textarea,
+  select,
+  button {
+    font: inherit;
+    color: inherit;
+  }
+
+  input[type='date'],
+  input[type='time'] {
+    direction: ltr;
+    text-align: right;
+  }
+}
+
+@layer components {
+  /* ------------------------------ شیشه (Glass) --------------------------- */
+  .glass {
+    background: rgb(var(--glass-bg) / var(--glass-alpha));
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+    border: 1px solid rgb(var(--glass-border) / var(--glass-border-alpha));
+  }
+
+  .card {
+    @apply rounded-card border border-[rgb(var(--border))] bg-[rgb(var(--surface))] shadow-soft;
+  }
+
+  .card-hover {
+    @apply transition-all duration-300 ease-natural hover:-translate-y-0.5 hover:shadow-lifted;
+  }
+
+  .panel {
+    @apply rounded-card border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))];
+  }
+
+  /* شیشه معتبر روی هر دو تم */
+  .glass-card {
+    @apply rounded-card border shadow-soft;
+    background: rgb(var(--glass-bg) / var(--glass-alpha));
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+    border-color: rgb(var(--glass-border) / var(--glass-border-alpha));
+  }
+
+  /* ------------------------------- دکمه‌ها ------------------------------- */
+  .btn {
+    @apply inline-flex select-none items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium
+      transition-all duration-200 ease-natural active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50;
+  }
+  .btn-primary {
+    background: rgb(var(--accent));
+    color: rgb(var(--accent-contrast));
+    @apply shadow-soft hover:brightness-[1.06];
+  }
+  .btn-ghost {
+    @apply text-[rgb(var(--text-muted))] hover:bg-[rgb(var(--text)/0.06)];
+  }
+  .btn-outline {
+    @apply border border-[rgb(var(--border))] bg-[rgb(var(--surface))] hover:bg-[rgb(var(--text)/0.04)];
+  }
+  .btn-danger {
+    background: rgb(var(--danger));
+    color: white;
+    @apply hover:brightness-[1.05];
+  }
+
+  /* -------------------------------- ورودی‌ها ----------------------------- */
+  .field {
+    @apply w-full rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))]
+      px-3.5 py-2.5 text-sm placeholder:text-[rgb(var(--text-subtle))] transition
+      focus:border-[rgb(var(--accent))] focus:outline-none focus:ring-4 focus:ring-[rgb(var(--accent)/0.12)];
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium;
+  }
+
+  /* -------------------------------- Skeleton ----------------------------- */
+  .skeleton {
+    @apply relative overflow-hidden rounded-xl bg-[rgb(var(--text)/0.07)];
+  }
+  .skeleton::after {
+    @apply absolute inset-0 -translate-x-full animate-shimmer bg-gradient-to-r from-transparent via-white/40 to-transparent
+      content-[''];
+  }
+  .dark .skeleton::after {
+    @apply via-white/10;
+  }
+
+  /* ------------------------------ کاغذ ژورنال ---------------------------- */
+  .paper {
+    background-color: rgb(var(--surface));
+    background-image: linear-gradient(rgb(var(--text) / 0.045) 1px, transparent 1px),
+      radial-gradient(rgb(var(--text) / 0.035) 1px, transparent 1px);
+    background-size: 100% 32px, 22px 22px;
+    line-height: 32px;
+  }
+
+  /* برجسته‌سازی نتایج جست‌وجو */
+  .mark {
+    @apply rounded bg-[rgb(var(--accent)/0.22)] px-0.5 font-semibold;
+  }
+
+  /* لیست تیره برای select */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  /* ناحیه ایمن موبایل */
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  .drag-none {
+    -webkit-user-drag: none;
+    user-select: none;
+  }
+  .grid-calendar {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+  }
+  /* اعداد لاتین داخل نمودارها برای خوانایی بهتر */
+  .chart-ltr {
+    direction: ltr;
+  }
+}
+
+/* ---------------------------- انیمیشن‌های کمکی --------------------------- */
+@keyframes confetti-fall {
+  0% {
+    transform: translate3d(0, -10vh, 0) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(var(--dx, 0px), 110vh, 0) rotate(var(--rot, 720deg));
+    opacity: 0;
+  }
+}
+.confetti-piece {
+  position: fixed;
+  top: 0;
+  width: 9px;
+  height: 14px;
+  border-radius: 3px;
+  animation: confetti-fall var(--dur, 2.6s) cubic-bezier(0.24, 0.6, 0.36, 1) forwards;
+  z-index: 90;
+  pointer-events: none;
+}
+
+/* حلقه تایمر پومودورو */
+.timer-ring circle {
+  transition: stroke-dashoffset 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: white;
+  }
+}
+
+/* احترام به تنظیم کاهش انیمیشن */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

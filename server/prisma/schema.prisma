@@ -1,0 +1,571 @@
+// ═══════════════════════════════════════════════════════════════════════════
+//  Renox Planner — Prisma Schema (حالت Full-Stack اختیاری)
+//  این فایل عمداً داخل پوشه `server/` است تا در نسخه استاتیک (GitHub Pages)
+//  کامپایل نشود. برای فعال‌سازی:  npm run server:enable
+//  پایگاه‌داده پیشنهادی: PostgreSQL (در توسعه می‌توانید SQLite بگذارید)
+// ═══════════════════════════════════════════════════════════════════════════
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql" // برای شروع سریع: "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────── کاربر و احراز هویت ─────────────────────────
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  passwordHash  String?
+  bio           String?
+  birthDate     DateTime?
+  currency      String    @default("IRR")
+  timezone      String    @default("Asia/Tehran")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts      Account[]
+  sessions      Session[]
+  settings      Setting?
+  tasks         Task[]
+  projects      Project[]
+  goals         Goal[]
+  habits        Habit[]
+  habitLogs     HabitLog[]
+  events        CalendarEvent[]
+  notes         Note[]
+  folders       Folder[]
+  journal       JournalEntry[]
+  transactions  Transaction[]
+  wallets       Wallet[]
+  categories    Category[]
+  budgets       Budget[]
+  healthLogs    HealthLog[]
+  workouts      WorkoutLog[]
+  medications   Medication[]
+  foods         FoodLog[]
+  focusSessions FocusSession[]
+  reminders     Reminder[]
+  notifications Notification[]
+  tags          Tag[]
+
+  @@map("users")
+}
+
+// مدل‌های استاندارد NextAuth
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// ─────────────────────────────────── تنظیمات ───────────────────────────────
+model Setting {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  theme             String   @default("system")
+  accent            String   @default("#57886A")
+  language          String   @default("fa")
+  weekStart         Int      @default(0)
+  waterGoal         Int      @default(8)
+  sleepGoal         Float    @default(8)
+  dayStart          String   @default("08:00")
+  sounds            Boolean  @default(true)
+  dashboardLayout   String[] @default(["today", "stats", "week-chart", "habits", "goals", "quote", "weather", "upcoming"])
+  notifyPush        Boolean  @default(true)
+  notifyTelegram    Boolean  @default(false)
+  notifyEmail       Boolean  @default(false)
+  telegramChatId    String?
+  cityName          String   @default("تهران")
+  cityLatitude      Float    @default(35.6892)
+  cityLongitude     Float    @default(51.389)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("settings")
+}
+
+// ─────────────────────────────── تسک و پروژه و هدف ─────────────────────────
+model Task {
+  id          String    @id @default(cuid())
+  userId      String
+  title       String
+  description String?   @db.Text
+  status      String    @default("todo") // todo | in_progress | review | done
+  priority    String    @default("medium") // low | medium | high | urgent
+  important   Boolean   @default(true)
+  urgent      Boolean   @default(false)
+  dueDate     DateTime?
+  dueTime     String?
+  repeatRule  String    @default("none") // none | daily | weekdays | weekly | monthly | yearly
+  estimate    Int?
+  spent       Int       @default(0)
+  reminderAt  DateTime?
+  completedAt DateTime?
+  order       Int       @default(0)
+  projectId   String?
+  goalId      String?
+  parentId    String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project     Project?     @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  goal        Goal?        @relation(fields: [goalId], references: [id], onDelete: SetNull)
+  parent      Task?        @relation("SubTasks", fields: [parentId], references: [id], onDelete: Cascade)
+  subtasks    Task[]       @relation("SubTasks")
+  tags        Tag[]
+  attachments Attachment[]
+  focusSessions FocusSession[]
+
+  @@index([userId, status])
+  @@index([userId, dueDate])
+  @@map("tasks")
+}
+
+model Project {
+  id          String    @id @default(cuid())
+  userId      String
+  name        String
+  description String?   @db.Text
+  color       String    @default("#57886A")
+  icon        String    @default("Folder")
+  archived    Boolean   @default(false)
+  dueDate     DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tasks  Task[]
+  events CalendarEvent[]
+
+  @@index([userId, archived])
+  @@map("projects")
+}
+
+model Goal {
+  id          String    @id @default(cuid())
+  userId      String
+  title       String
+  description String?   @db.Text
+  horizon     String    @default("short") // short | mid | long
+  category    String    @default("شخصی")
+  color       String    @default("#57886A")
+  targetDate  DateTime?
+  progress    Int       @default(0) // برای اهداف بدون نتیجه کلیدی
+  completed   Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  keyResults KeyResult[]
+  tasks      Task[]
+
+  @@map("goals")
+}
+
+model KeyResult {
+  id       String  @id @default(cuid())
+  goalId   String
+  title    String
+  target   Float
+  current  Float   @default(0)
+  unit     String?
+  goal     Goal    @relation(fields: [goalId], references: [id], onDelete: Cascade)
+
+  @@map("key_results")
+}
+
+// ─────────────────────────────────── عادت‌ها ───────────────────────────────
+model Habit {
+  id           String   @id @default(cuid())
+  userId       String
+  name         String
+  icon         String   @default("Check")
+  color        String   @default("#57886A")
+  frequency    String   @default("daily") // daily | weekly | monthly
+  weekdays     Int[]    @default([0, 1, 2, 3, 4, 5, 6])
+  target       Int      @default(1)
+  unit         String?
+  kind         String   @default("good") // good | bad
+  reminderTime String?
+  archived     Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  logs HabitLog[]
+
+  @@index([userId, archived])
+  @@map("habits")
+}
+
+model HabitLog {
+  id      String   @id @default(cuid())
+  habitId String
+  userId  String
+  date    DateTime // ذخیره به شکل نیمه‌شب محلی روز
+  count   Int      @default(1)
+  note    String?
+
+  habit Habit @relation(fields: [habitId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([habitId, date])
+  @@index([userId, date])
+  @@map("habit_logs")
+}
+
+// ─────────────────────────────────── تقویم ─────────────────────────────────
+model CalendarEvent {
+  id          String   @id @default(cuid())
+  userId      String
+  title       String
+  description String?  @db.Text
+  type        String   @default("event") // event | reminder | meeting | birthday | exam
+  start       DateTime
+  end         DateTime?
+  allDay      Boolean  @default(false)
+  location    String?
+  color       String   @default("#57886A")
+  projectId   String?
+  googleId    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+
+  @@index([userId, start])
+  @@map("events")
+}
+
+// ─────────────────────────── یادداشت و ژورنال ──────────────────────────────
+model Folder {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  icon      String   @default("Folder")
+  color     String   @default("#AD9268")
+  createdAt DateTime @default(now())
+
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  notes Note[]
+
+  @@map("folders")
+}
+
+model Note {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  content   String   @db.Text
+  folderId  String?
+  pinned    Boolean  @default(false)
+  color     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  folder      Folder?      @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  tags        Tag[]
+  attachments Attachment[]
+
+  @@index([userId, pinned])
+  @@map("notes")
+}
+
+model JournalEntry {
+  id        String   @id @default(cuid())
+  userId    String
+  date      DateTime
+  title     String   @default("")
+  content   String   @db.Text
+  mood      Int      @default(3) // ۱ تا ۵
+  energy    Int      @default(5) // ۱ تا ۱۰
+  gratitude String[] @default([])
+  lessons   String?  @db.Text
+  highlights String? @db.Text
+  photo     String?
+  weather   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@map("journal_entries")
+}
+
+// ──────────────────────────────────── مالی ────────────────────────────────
+model Wallet {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  type      String   @default("bank") // cash | bank | card | crypto | other
+  balance   Float    @default(0)
+  currency  String   @default("IRR")
+  color     String   @default("#57886A")
+  createdAt DateTime @default(now())
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+
+  @@map("wallets")
+}
+
+model Category {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  icon      String   @default("Tag")
+  color     String   @default("#AD9268")
+  type      String   @default("expense") // income | expense | transfer
+  createdAt DateTime @default(now())
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+  budgets      Budget[]
+
+  @@map("categories")
+}
+
+model Transaction {
+  id          String   @id @default(cuid())
+  userId      String
+  type        String   // income | expense | transfer
+  amount      Float
+  currency    String   @default("IRR")
+  amountBase  Float    // معادل واحد پایه برای گزارش‌ها
+  title       String
+  note        String?
+  date        DateTime @default(now())
+  categoryId  String?
+  walletId    String?
+  toWalletId  String?
+  recurring   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  wallet   Wallet?   @relation(fields: [walletId], references: [id], onDelete: SetNull)
+  tags     Tag[]
+
+  @@index([userId, date])
+  @@map("transactions")
+}
+
+model Budget {
+  id         String   @id @default(cuid())
+  userId     String
+  categoryId String
+  amount     Float
+  month      String   // مثل 1404-07 (ماه شمسی)
+  createdAt  DateTime @default(now())
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, categoryId, month])
+  @@map("budgets")
+}
+
+// ─────────────────────────────────── سلامت ────────────────────────────────
+model HealthLog {
+  id           String   @id @default(cuid())
+  userId       String
+  date         DateTime
+  weight       Float?
+  height       Float?
+  sleepHours   Float?
+  sleepQuality Int?
+  steps        Int?
+  water        Int      @default(0)
+  calories     Int?
+  mood         Int?
+  notes        String?
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@map("health_logs")
+}
+
+model WorkoutLog {
+  id        String   @id @default(cuid())
+  userId    String
+  date      DateTime
+  title     String
+  type      String   @default("هوازی")
+  duration  Int      @default(30)
+  calories  Int?
+  intensity Int      @default(2)
+  exercises Json     @default("[]")
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, date])
+  @@map("workout_logs")
+}
+
+model Medication {
+  id        String    @id @default(cuid())
+  userId    String
+  name      String
+  dose      String    @default("")
+  times     String[]  @default(["09:00"])
+  startDate DateTime  @default(now())
+  endDate   DateTime?
+  active    Boolean   @default(true)
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("medications")
+}
+
+model FoodLog {
+  id        String   @id @default(cuid())
+  userId    String
+  date      DateTime
+  meal      String   @default("lunch") // breakfast | lunch | dinner | snack
+  title     String
+  calories  Int      @default(0)
+  protein   Float?
+  carbs     Float?
+  fat       Float?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, date])
+  @@map("food_logs")
+}
+
+// ───────────────────────────── تمرکز و یادآور و اعلان ──────────────────────
+model FocusSession {
+  id        String   @id @default(cuid())
+  userId    String
+  taskId    String?
+  startedAt DateTime @default(now())
+  minutes   Int
+  mode      String   @default("focus") // focus | break
+  completed Boolean  @default(true)
+  label     String?
+
+  user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  task Task? @relation(fields: [taskId], references: [id], onDelete: SetNull)
+
+  @@index([userId, startedAt])
+  @@map("focus_sessions")
+}
+
+model Reminder {
+  id          String   @id @default(cuid())
+  userId      String
+  title       String
+  at          DateTime
+  channel     String   @default("in-app") // push | telegram | email | in-app
+  repeatRule  String   @default("none")
+  relatedType String?
+  relatedId   String?
+  done        Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, at])
+  @@map("reminders")
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  body      String
+  type      String   @default("info") // info | success | warning | error
+  read      Boolean  @default(false)
+  href      String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read])
+  @@map("notifications")
+}
+
+// ─────────────────────────── برچسب و پیوست (مشترک) ─────────────────────────
+model Tag {
+  id            String   @id @default(cuid())
+  userId        String
+  name          String
+  color         String   @default("#AD9268")
+  createdAt     DateTime @default(now())
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tasks        Task[]
+  notes        Note[]
+  transactions Transaction[]
+
+  @@unique([userId, name])
+  @@map("tags")
+}
+
+model Attachment {
+  id        String   @id @default(cuid())
+  taskId    String?
+  noteId    String?
+  name      String
+  size      Int
+  mimeType  String
+  url       String
+  createdAt DateTime @default(now())
+
+  task Task? @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  note Note? @relation(fields: [noteId], references: [id], onDelete: Cascade)
+
+  @@map("attachments")
+}
