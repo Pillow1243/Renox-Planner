@@ -8,6 +8,14 @@
 > از تسک و عادت روزانه تا تقویم شمسی، بودجه، سلامت، ژورنال و گزارش — بدون اشتراک، بدون تبلیغ، بدون سرور.
 
 <p align="center">
+  <a href="https://pillow1243.github.io/Renox-Planner/"><img alt="دموی زنده" src="https://img.shields.io/badge/دموی%20زنده-همین%20حالا%20امتحان%20کن-57886A?style=for-the-badge" /></a>
+</p>
+
+<p align="center">
+  🌐 <b>نسخه منتشرشده:</b> <a href="https://pillow1243.github.io/Renox-Planner/">https://pillow1243.github.io/Renox-Planner/</a>
+</p>
+
+<p align="center">
   <a href="#"><img alt="نسخه" src="https://img.shields.io/badge/version-1.0.0-57886A?style=flat-square" /></a>
   <a href="#"><img alt="مجوز" src="https://img.shields.io/badge/license-MIT-AD9268?style=flat-square" /></a>
   <a href="#"><img alt="زبان" src="https://img.shields.io/badge/lang-فارسی-4F8A96?style=flat-square" /></a>
