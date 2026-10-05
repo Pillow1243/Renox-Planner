@@ -1,5 +1,7 @@
 <img src="docs/banner.svg" alt="Renox Planner" width="100%" />
 
+> 🖼 تصویر پیش‌نمایش شبکه‌های اجتماعی (`public/og-image.png`) با اسکریپت `python3 scripts/generate-og.py` ساخته می‌شود — ۱۲۸۰×۶۴۰ با پالت و فونت خود برنامه.
+
 <div dir="rtl">
 
 # 📋 Renox Planner — برنامه‌ریز جامع زندگی
